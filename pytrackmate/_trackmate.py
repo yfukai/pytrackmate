@@ -170,7 +170,6 @@ def trackmate_peak_export(trackmate_dataframe,version="3.7.0",
         spots_in_frame = et.SubElement(all_spots,"SpotsInFrame",frame=str(t_stamp))
         for _, row in grp.iterrows():
             row_dict=row.to_dict()
-            del row_dict["t_stamp"]
             del row_dict["spot_id"]
             to_string=lambda k,v : \
                 str(int(v)) if FEATURE_PROPERTIES[OBJECT_LABELS_INV[k]]["isint"]=="true" \
@@ -178,7 +177,7 @@ def trackmate_peak_export(trackmate_dataframe,version="3.7.0",
             row_dict={OBJECT_LABELS_INV[k]:to_string(k,v) 
                       for k,v in row_dict.items()
                       if k in OBJECT_LABELS_INV}
-            print(row_dict)
+            row_dict["ID"]=str(int(row["spot_id"]))
             et.SubElement(spots_in_frame,"Spot",**row_dict)
     
     settings = et.SubElement(root,"Settings")

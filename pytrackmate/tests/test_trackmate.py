@@ -1,6 +1,7 @@
 import os
 import xml.etree.cElementTree as et
 
+import numpy as np
 import pandas as pd
 
 from pytrackmate import trackmate_peak_import, trackmate_peak_export
@@ -33,9 +34,14 @@ def test_export(tmp_path):
          'label': {0: 0, 7: 1}})
     result_xml = trackmate_peak_export(test_dataframe)
     assert "Spot" in result_xml
-    print(result_xml)
 
     test_xml_file = tmp_path / "Tracks.xml"
     test_xml_file.write_text(result_xml)
 
     test_dataframe2 = trackmate_peak_import(test_xml_file)
+
+    for k in test_dataframe2.keys():
+        assert k in test_dataframe.keys()
+        print(test_dataframe[k])
+        print(test_dataframe2[k])
+        assert np.all(np.isclose(test_dataframe[k],test_dataframe2[k]))
