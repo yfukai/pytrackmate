@@ -5,25 +5,27 @@ from xml.dom import minidom
 import numpy as np
 import pandas as pd
 
-OBJECT_LABELS = {'FRAME': 't_stamp',
-                 'POSITION_T': 't',
-                 'POSITION_X': 'x',
-                 'POSITION_Y': 'y',
-                 'POSITION_Z': 'z',
-                 'MEAN_INTENSITY': 'I',
-                 'ESTIMATED_DIAMETER': 'w',
-                 'QUALITY': 'q',
-                 'ID': 'spot_id',
-                 'MEAN_INTENSITY': 'mean_intensity',
-                 'MEDIAN_INTENSITY': 'median_intensity',
-                 'MIN_INTENSITY': 'min_intensity',
-                 'MAX_INTENSITY': 'max_intensity',
-                 'TOTAL_INTENSITY': 'total_intensity',
-                 'STANDARD_DEVIATION': 'std_intensity',
-                 'CONTRAST': 'contrast',
-                 'SNR': 'snr'}
+OBJECT_LABELS = {
+    "FRAME": "t_stamp",
+    "POSITION_T": "t",
+    "POSITION_X": "x",
+    "POSITION_Y": "y",
+    "POSITION_Z": "z",
+    "MEAN_INTENSITY": "I",
+    "ESTIMATED_DIAMETER": "w",
+    "QUALITY": "q",
+    "ID": "spot_id",
+    "MEAN_INTENSITY": "mean_intensity",
+    "MEDIAN_INTENSITY": "median_intensity",
+    "MIN_INTENSITY": "min_intensity",
+    "MAX_INTENSITY": "max_intensity",
+    "TOTAL_INTENSITY": "total_intensity",
+    "STANDARD_DEVIATION": "std_intensity",
+    "CONTRAST": "contrast",
+    "SNR": "snr",
+}
 
-OBJECT_LABELS_INV={v:k for k,v in OBJECT_LABELS.items()}
+OBJECT_LABELS_INV = {v: k for k, v in OBJECT_LABELS.items()}
 
 FEATURE_PROPERTIES = {
     "QUALITY": dict(name="Quality", shortname="Quality", dimension="QUALITY", isint="false"),
@@ -45,6 +47,7 @@ FEATURE_PROPERTIES = {
     "CONTRAST": dict(name="Contrast", shortname="Constrast", dimension="NONE", isint="false"),
     "SNR": dict(name="Signal/Noise ratio", shortname="SNR", dimension="NONE", isint="false"),
 }
+
 
 def trackmate_peak_import(trackmate_xml_path, get_tracks=False):
     """Import detected peaks with TrackMate Fiji plugin.
@@ -135,9 +138,13 @@ def filter_spots(spots, name, value, isabove):
     return spots
 
 
-def trackmate_peak_export(trackmate_dataframe,version="3.7.0",
-                          spatialunits="pixel",timeunits="sec",
-                          image_data_props={}):
+def trackmate_peak_export(
+    trackmate_dataframe,
+    version="3.7.0",
+    spatialunits="pixel",
+    timeunits="sec",
+    image_data_props={},
+):
     """Export peaks to XML for TrackMate Fiji plugin.
 
     Parameters
@@ -153,41 +160,42 @@ def trackmate_peak_export(trackmate_dataframe,version="3.7.0",
     """
 
     root = et.Element("TrackMate", version=version)
-    model = et.SubElement(root,"Model",
-                          spatialunits=spatialunits,
-                          timeunits=timeunits)
-    feature_declarations = et.SubElement(model,"FeatureDeclarations")
-    spot_features = et.SubElement(feature_declarations,"SpotFeatures")
+    model = et.SubElement(root, "Model", spatialunits=spatialunits, timeunits=timeunits)
+    feature_declarations = et.SubElement(model, "FeatureDeclarations")
+    spot_features = et.SubElement(feature_declarations, "SpotFeatures")
     for key in trackmate_dataframe.keys():
-        if key in OBJECT_LABELS_INV.keys() and key!="spot_id":
-            original_key=OBJECT_LABELS_INV[key]
-            properties=FEATURE_PROPERTIES[original_key]
-            et.SubElement(spot_features,"Feature",feature=original_key,**properties)
+        if key in OBJECT_LABELS_INV.keys() and key != "spot_id":
+            original_key = OBJECT_LABELS_INV[key]
+            properties = FEATURE_PROPERTIES[original_key]
+            et.SubElement(spot_features, "Feature", feature=original_key, **properties)
 
-    all_spots = et.SubElement(model,"AllSpots",
-                              nspots=str(len(trackmate_dataframe)))
+    all_spots = et.SubElement(model, "AllSpots", nspots=str(len(trackmate_dataframe)))
     for t_stamp, grp in trackmate_dataframe.groupby("t_stamp"):
-        spots_in_frame = et.SubElement(all_spots,"SpotsInFrame",frame=str(t_stamp))
+        spots_in_frame = et.SubElement(all_spots, "SpotsInFrame", frame=str(t_stamp))
         for _, row in grp.iterrows():
-            row_dict=row.to_dict()
+            row_dict = row.to_dict()
             del row_dict["spot_id"]
-            to_string=lambda k,v : \
-                str(int(v)) if FEATURE_PROPERTIES[OBJECT_LABELS_INV[k]]["isint"]=="true" \
+            to_string = (
+                lambda k, v: str(int(v))
+                if FEATURE_PROPERTIES[OBJECT_LABELS_INV[k]]["isint"] == "true"
                 else str(float(v))
-            row_dict={OBJECT_LABELS_INV[k]:to_string(k,v) 
-                      for k,v in row_dict.items()
-                      if k in OBJECT_LABELS_INV}
-            row_dict["ID"]=str(int(row["spot_id"]))
-            et.SubElement(spots_in_frame,"Spot",**row_dict)
-    
-    settings = et.SubElement(root,"Settings")
-    et.SubElement(settings,"ImageData")
-    et.SubElement(settings,"BasicSettings")
-    et.SubElement(settings,"InitialSpotFilter", feature="QUALITY", value="0.0",isabove="true")
-    et.SubElement(settings,"SpotFilterCollection")
-    
-    trackmate_xml=et.tostring(root)
+            )
+            row_dict = {
+                OBJECT_LABELS_INV[k]: to_string(k, v)
+                for k, v in row_dict.items()
+                if k in OBJECT_LABELS_INV
+            }
+            row_dict["ID"] = str(int(row["spot_id"]))
+            et.SubElement(spots_in_frame, "Spot", **row_dict)
+
+    settings = et.SubElement(root, "Settings")
+    et.SubElement(settings, "ImageData")
+    et.SubElement(settings, "BasicSettings")
+    et.SubElement(
+        settings, "InitialSpotFilter", feature="QUALITY", value="0.0", isabove="true"
+    )
+    et.SubElement(settings, "SpotFilterCollection")
+
+    trackmate_xml = et.tostring(root)
     trackmate_xml = minidom.parseString(trackmate_xml)
     return trackmate_xml.toprettyxml(indent="  ")
-
-
