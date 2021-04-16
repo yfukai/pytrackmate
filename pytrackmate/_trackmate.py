@@ -1,4 +1,3 @@
-from datetime import time
 import xml.etree.cElementTree as et
 from xml.dom import minidom
 

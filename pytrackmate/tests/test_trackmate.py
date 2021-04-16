@@ -1,10 +1,9 @@
 import os
-import xml.etree.cElementTree as et
 
 import numpy as np
 import pandas as pd
 
-from pytrackmate import trackmate_peak_import, trackmate_peak_export
+from pytrackmate import trackmate_peak_export, trackmate_peak_import
 
 
 def test_import():
